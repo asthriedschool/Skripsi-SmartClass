@@ -1,0 +1,13 @@
+$kind: http-request
+url: http://localhost:8081/api/auth/login
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "email-yang-sudah-ada@smartclass.ac.id",
+      "password": "password"
+    }
+order: 2000
