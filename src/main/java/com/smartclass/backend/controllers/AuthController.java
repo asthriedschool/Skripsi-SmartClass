@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
     private final UserService userService;
     private final AuthService authService;
+
 
     public AuthController(
             UserService userService,
@@ -30,35 +32,48 @@ public class AuthController {
         this.authService = authService;
     }
 
+
     @PostMapping("/register")
     public ResponseEntity<APIResponse> registerUser(
             @RequestBody RegisterRequest request
     ) {
+
         userService.registerUser(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(new APIResponse(
-                        HttpStatus.CREATED.value(),
-                        "Registrasi berhasil"
-                ));
+                .body(
+                        new APIResponse(
+                                HttpStatus.CREATED.value(),
+                                "Registrasi berhasil"
+                        )
+                );
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
             @RequestBody LoginRequest request
     ) {
+
         return ResponseEntity.ok(
                 authService.login(request)
         );
     }
 
+
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponse> refresh(
             @RequestBody RefreshTokenRequest request
     ) {
+
+        final var authResponse =
+                authService.refresh(
+                        request.refreshToken()
+                );
+
         return ResponseEntity.ok(
-                authService.refresh(request.refreshToken())
+                authResponse
         );
     }
 }

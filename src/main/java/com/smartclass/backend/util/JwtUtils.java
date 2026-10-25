@@ -9,13 +9,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import javax.crypto.SecretKey;
 
 import java.time.Instant;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 
 public final class JwtUtils {
+
 
     private JwtUtils() {
     }
@@ -29,7 +29,9 @@ public final class JwtUtils {
             long expirationTimeSeconds
     ) {
 
-        Instant now = Instant.now();
+        Instant now =
+                Instant.now();
+
 
         Instant expiration =
                 now.plusSeconds(
@@ -93,11 +95,13 @@ public final class JwtUtils {
                         secretKey
                 );
 
+
         return claims.getSubject();
     }
 
 
-    public static List<? extends GrantedAuthority> extractAuthorities(
+    public static List<? extends GrantedAuthority>
+    extractAuthorities(
             Claims claims
     ) {
 
@@ -108,7 +112,8 @@ public final class JwtUtils {
                 );
 
 
-        if (role == null || role.isBlank()) {
+        if (role == null ||
+                role.isBlank()) {
 
             throw new IllegalArgumentException(
                     "Role tidak ditemukan di JWT"
@@ -128,5 +133,38 @@ public final class JwtUtils {
 
 
         return authorities;
+    }
+
+
+    public static Claims getClaimsFromToken(
+            String token,
+            SecretKey secretKey
+    ) {
+
+        return parseToken(
+                token,
+                secretKey
+        );
+    }
+
+
+    public static boolean isTokenValid(
+            String token,
+            SecretKey secretKey
+    ) {
+
+        try {
+
+            parseToken(
+                    token,
+                    secretKey
+            );
+
+            return true;
+
+        } catch (Exception e) {
+
+            return false;
+        }
     }
 }
