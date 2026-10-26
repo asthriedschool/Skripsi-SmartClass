@@ -1,0 +1,15 @@
+$kind: http-request
+url: http://localhost:8081/api/auth/register
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"fullName\": \"Admin Smart Class\",\r
+
+    \    \"email\": \"admin@smartclass.com\",\r
+
+    \    \"password\": \"Admin123\"\r
+
+    }"
+order: 2000

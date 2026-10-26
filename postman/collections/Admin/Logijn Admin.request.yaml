@@ -1,0 +1,11 @@
+$kind: http-request
+url: http://localhost:8081/api/auth/login
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "email": "admin@smartclass.com",
+        "password": "Admin123"
+    }
+order: 1000

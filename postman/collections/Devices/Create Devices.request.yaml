@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:8081/api/devices
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"id_room\": 1,\r
+
+    \  \"device_name\": \"Lampu Utama\",\r
+
+    \  \"device_code\": \"LAMP-101-01\",\r
+
+    \  \"device_type\": \"LAMP\",\r
+
+    \  \"status\": \"OFF\",\r
+
+    \  \"is_enabled\": true\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0vhk}}"
+order: 1000

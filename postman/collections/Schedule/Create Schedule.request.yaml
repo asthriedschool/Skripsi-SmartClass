@@ -1,0 +1,23 @@
+$kind: http-request
+url: http://localhost:8081/api/schedules
+method: POST
+body:
+  type: json
+  content: |-
+    {
+      "id_room": 2,
+      "created_by": 7,
+      "activity_name": "Kuliah Web Design",
+      "lecturer_name": "Dr. Budi",
+      "schedule_type": "WEEKLY",
+      "schedule_date": null,
+      "day_of_week": "MONDAY",
+      "start_time": "08:00:00",
+      "end_time": "10:00:00",
+      "is_cancelled": false
+    }
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_1e3o}}"
+order: 1000
