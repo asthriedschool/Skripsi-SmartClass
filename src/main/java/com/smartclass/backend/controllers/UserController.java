@@ -1,5 +1,6 @@
 package com.smartclass.backend.controllers;
 
+import com.smartclass.backend.dto.UserResponse;
 import com.smartclass.backend.entity.UserEntity;
 import com.smartclass.backend.entity.enumsUserEntity.AccountStatus;
 import com.smartclass.backend.entity.enumsUserEntity.Role;
@@ -21,33 +22,49 @@ public class UserController {
 
     // GET semua user
     @GetMapping
-    public List<UserEntity> getAllUsers() {
-        return userService.getAllUsers();
+    public List<UserResponse> getAllUsers() {
+
+        return userService.getAllUsers()
+                .stream()
+                .map(this::toUserResponse)
+                .toList();
     }
 
     // GET satu user berdasarkan ID
     @GetMapping("/{id_user}")
-    public UserEntity getUserById(
+    public UserResponse getUserById(
             @PathVariable Long id_user
     ) {
-        return userService.getUserById(id_user);
+
+        return toUserResponse(
+                userService.getUserById(id_user)
+        );
     }
 
     // CREATE user
     @PostMapping
-    public UserEntity createUser(
+    public UserResponse createUser(
             @RequestBody UserEntity user
     ) {
-        return userService.createUser(user);
+
+        return toUserResponse(
+                userService.createUser(user)
+        );
     }
 
     // UPDATE user
     @PutMapping("/{id_user}")
-    public UserEntity updateUser(
+    public UserResponse updateUser(
             @PathVariable Long id_user,
             @RequestBody UserEntity user
     ) {
-        return userService.updateUser(id_user, user);
+
+        return toUserResponse(
+                userService.updateUser(
+                        id_user,
+                        user
+                )
+        );
     }
 
     // DELETE user
@@ -55,6 +72,7 @@ public class UserController {
     public String deleteUser(
             @PathVariable Long id_user
     ) {
+
         userService.deleteUser(id_user);
 
         return "User berhasil dihapus";
@@ -62,25 +80,49 @@ public class UserController {
 
     // UPDATE role
     @PatchMapping("/{id_user}/role")
-    public UserEntity updateRole(
+    public UserResponse updateRole(
             @PathVariable Long id_user,
             @RequestParam Role role
     ) {
-        return userService.updateRole(
-                id_user,
-                role
+
+        return toUserResponse(
+                userService.updateRole(
+                        id_user,
+                        role
+                )
         );
     }
 
     // UPDATE account status
     @PatchMapping("/{id_user}/account-status")
-    public UserEntity updateAccountStatus(
+    public UserResponse updateAccountStatus(
             @PathVariable Long id_user,
             @RequestParam AccountStatus accountStatus
     ) {
-        return userService.updateAccountStatus(
-                id_user,
-                accountStatus
+
+        return toUserResponse(
+                userService.updateAccountStatus(
+                        id_user,
+                        accountStatus
+                )
+        );
+    }
+
+    // Convert UserEntity menjadi UserResponse
+    private UserResponse toUserResponse(
+            UserEntity user
+    ) {
+
+        return new UserResponse(
+                user.getId_user(),
+                user.getFull_name(),
+                user.getEmail(),
+                user.getRole(),
+                user.getAccount_status(),
+                user.getProfile_picture(),
+                user.getLast_login_at(),
+                user.getCreated_at(),
+                user.getUpdated_at()
         );
     }
 }
