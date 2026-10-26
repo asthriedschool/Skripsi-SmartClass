@@ -4,6 +4,7 @@ import com.smartclass.backend.entity.DeviceCommandEntity;
 import com.smartclass.backend.entity.enumsDeviceCommandEntity.CommandStatus;
 import com.smartclass.backend.service.DeviceCommandService;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,7 +15,9 @@ public class DeviceCommandController {
 
     private final DeviceCommandService deviceCommandService;
 
-    public DeviceCommandController(DeviceCommandService deviceCommandService) {
+    public DeviceCommandController(
+            DeviceCommandService deviceCommandService
+    ) {
         this.deviceCommandService = deviceCommandService;
     }
 
@@ -29,15 +32,49 @@ public class DeviceCommandController {
     public DeviceCommandEntity getDeviceCommandById(
             @PathVariable Long id_command
     ) {
-        return deviceCommandService.getDeviceCommandById(id_command);
+        return deviceCommandService.getDeviceCommandById(
+                id_command
+        );
     }
 
     // CREATE device command
     @PostMapping
     public DeviceCommandEntity createDeviceCommand(
-            @RequestBody DeviceCommandEntity command
+            @RequestBody DeviceCommandEntity command,
+            Authentication authentication
     ) {
-        return deviceCommandService.createDeviceCommand(command);
+
+        /*
+         * =========================================================
+         * PSEUDOCODE CREATE DEVICE COMMAND
+         * =========================================================
+         *
+         * 1. Client mengirim command + JWT.
+         *
+         * 2. JwtAuthFilter memvalidasi JWT.
+         *
+         * 3. Spring Security mengisi Authentication.
+         *
+         * 4. Ambil email user yang sedang login:
+         *
+         *      authentication.getName()
+         *
+         * 5. Kirim email tersebut ke Service.
+         *
+         * 6. Service mencari id_user.
+         *
+         * 7. Service otomatis mengisi id_user
+         *    pada device command.
+         *
+         * =========================================================
+         */
+
+        String userEmail = authentication.getName();
+
+        return deviceCommandService.createDeviceCommand(
+                command,
+                userEmail
+        );
     }
 
     // UPDATE device command
@@ -46,7 +83,10 @@ public class DeviceCommandController {
             @PathVariable Long id_command,
             @RequestBody DeviceCommandEntity command
     ) {
-        return deviceCommandService.updateDeviceCommand(id_command, command);
+        return deviceCommandService.updateDeviceCommand(
+                id_command,
+                command
+        );
     }
 
     // DELETE device command
@@ -54,7 +94,9 @@ public class DeviceCommandController {
     public String deleteDeviceCommand(
             @PathVariable Long id_command
     ) {
-        deviceCommandService.deleteDeviceCommand(id_command);
+        deviceCommandService.deleteDeviceCommand(
+                id_command
+        );
 
         return "Device command berhasil dihapus";
     }

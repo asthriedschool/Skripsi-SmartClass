@@ -1,0 +1,25 @@
+$kind: http-request
+url: http://localhost:8081/api/device-commands
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"id_device\": 1,\r
+
+    \  \"command\": \"ON\",\r
+
+    \  \"source\": \"MANUAL\",\r
+
+    \  \"command_status\": \"PENDING\",\r
+
+    \  \"error_message\": null,\r
+
+    \  \"executed_at\": null\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0wnn}}"
+order: 1000
