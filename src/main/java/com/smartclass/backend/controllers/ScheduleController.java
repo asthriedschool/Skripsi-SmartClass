@@ -3,6 +3,7 @@ package com.smartclass.backend.controllers;
 import com.smartclass.backend.entity.ScheduleEntity;
 import com.smartclass.backend.service.ScheduleService;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,9 +35,52 @@ public class ScheduleController {
     // CREATE schedule
     @PostMapping
     public ScheduleEntity createSchedule(
-            @RequestBody ScheduleEntity schedule
+            @RequestBody ScheduleEntity schedule,
+            Authentication authentication
     ) {
-        return scheduleService.createSchedule(schedule);
+
+        /*
+         * =========================================================
+         * PSEUDOCODE CREATE SCHEDULE
+         * =========================================================
+         *
+         * 1. User login menggunakan email + password.
+         *
+         * 2. Setelah login berhasil, backend membuat JWT.
+         *
+         * 3. Flutter mengirim JWT pada Authorization Header:
+         *
+         *      Authorization: Bearer <accessToken>
+         *
+         * 4. JwtAuthFilter memvalidasi JWT.
+         *
+         * 5. Jika JWT valid, Authentication berisi
+         *    identitas user yang sedang login.
+         *
+         * 6. authentication.getName()
+         *    mengambil email user.
+         *
+         * 7. ScheduleService mencari user berdasarkan email.
+         *
+         * 8. Backend mengambil id_user dari user tersebut.
+         *
+         * 9. Backend otomatis mengisi:
+         *
+         *      schedule.created_by = id_user
+         *
+         * 10. Data schedule disimpan ke database.
+         *
+         * Jadi client TIDAK perlu mengirim created_by.
+         *
+         * =========================================================
+         */
+
+        String userEmail = authentication.getName();
+
+        return scheduleService.createSchedule(
+                schedule,
+                userEmail
+        );
     }
 
     // UPDATE schedule
@@ -45,7 +89,10 @@ public class ScheduleController {
             @PathVariable Long id_schedule,
             @RequestBody ScheduleEntity schedule
     ) {
-        return scheduleService.updateSchedule(id_schedule, schedule);
+        return scheduleService.updateSchedule(
+                id_schedule,
+                schedule
+        );
     }
 
     // DELETE schedule
