@@ -81,8 +81,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/schedules/**")
                         .hasAnyRole("ADMIN", "PETUGAS")
 
+                        .requestMatchers(HttpMethod.POST, "/api/schedules/**")
+                        .hasAnyRole("ADMIN", "PETUGAS")
+
                         .requestMatchers("/api/schedules/**")
                         .hasRole("ADMIN")
+
+                        // VISION
+                        .requestMatchers("/api/vision/**")
+                        .hasAnyRole("ADMIN", "PETUGAS")
 
                         // DEVICE COMMAND
                         .requestMatchers("/api/device-commands/**")

@@ -1,36 +1,42 @@
 package com.smartclass.backend.service;
 
+import com.smartclass.backend.dto.ScheduleRequest;
 import com.smartclass.backend.entity.ScheduleEntity;
 import com.smartclass.backend.entity.UserEntity;
+import com.smartclass.backend.entity.enumsScheduleEntity.DayOfWeek;
+import com.smartclass.backend.entity.enumsScheduleEntity.ScheduleType;
+import com.smartclass.backend.entity.enumsUserEntity.Role;
+import com.smartclass.backend.exception.ScheduleConflictException;
+import com.smartclass.backend.repository.RoomRepository;
 import com.smartclass.backend.repository.ScheduleRepository;
 import com.smartclass.backend.repository.UserRepository;
-
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final RoomRepository roomRepository;
     private final UserRepository userRepository;
 
     public ScheduleService(
             ScheduleRepository scheduleRepository,
+            RoomRepository roomRepository,
             UserRepository userRepository
     ) {
         this.scheduleRepository = scheduleRepository;
+        this.roomRepository = roomRepository;
         this.userRepository = userRepository;
     }
 
-    // GET semua schedule
     public List<ScheduleEntity> getAllSchedules() {
         return scheduleRepository.findAll();
     }
 
-    // GET schedule berdasarkan ID
     public ScheduleEntity getScheduleById(Long id_schedule) {
-
         if (id_schedule == null) {
             throw new IllegalArgumentException(
                     "ID schedule tidak boleh null"
@@ -44,42 +50,11 @@ public class ScheduleService {
                 ));
     }
 
-    // CREATE schedule
     public ScheduleEntity createSchedule(
-            ScheduleEntity schedule,
+            ScheduleRequest request,
             String userEmail
     ) {
-
-        /*
-         * =========================================================
-         * PSEUDOCODE CREATE SCHEDULE
-         * =========================================================
-         *
-         * 1. Pastikan data schedule tidak null.
-         *
-         * 2. Pastikan email user dari JWT tersedia.
-         *
-         * 3. Cari user berdasarkan email.
-         *
-         * 4. Ambil id_user dari user yang sedang login.
-         *
-         * 5. Jangan percaya created_by yang dikirim client.
-         *
-         * 6. Set:
-         *
-         *      schedule.created_by = user.id_user
-         *
-         * 7. Validasi schedule.
-         *
-         * 8. Simpan schedule ke database.
-         *
-         * Dengan cara ini user tidak bisa memalsukan
-         * siapa yang membuat schedule.
-         *
-         * =========================================================
-         */
-
-        if (schedule == null) {
+        if (request == null) {
             throw new IllegalArgumentException(
                     "Data schedule tidak boleh null"
             );
@@ -91,26 +66,65 @@ public class ScheduleService {
             );
         }
 
-        UserEntity user = userRepository.findByEmail(
-                userEmail.trim()
-        ).orElseThrow(() -> new RuntimeException(
-                "User dengan email " + userEmail
-                        + " tidak ditemukan"
-        ));
+        UserEntity user = userRepository.findByEmail(userEmail.trim())
+                .orElseThrow(() -> new RuntimeException(
+                        "User dengan email " + userEmail
+                                + " tidak ditemukan"
+                ));
 
+        if (user.getRole() == Role.PETUGAS
+                && request.scheduleType() != ScheduleType.ONCE) {
+            throw new IllegalArgumentException(
+                    "Petugas hanya dapat membuat schedule insidental (ONCE)"
+            );
+        }
+
+        ScheduleEntity schedule = new ScheduleEntity();
+        schedule.setId_room(request.idRoom());
+        schedule.setActivity_name(request.activityName());
+        schedule.setLecturer_name(request.lecturerName());
+        schedule.setRequester_name(request.requesterName());
+        schedule.setSchedule_type(request.scheduleType());
+        schedule.setSchedule_date(request.scheduleDate());
+        schedule.setDay_of_week(request.dayOfWeek());
+        schedule.setStart_time(request.startTime());
+        schedule.setEnd_time(request.endTime());
+        schedule.setIs_cancelled(
+                request.isCancelled() == null ? false : request.isCancelled()
+        );
         schedule.setCreated_by(user.getId_user());
 
         validateSchedule(schedule);
 
+        validateSchedulePattern(
+                schedule,
+                user.getRole() == Role.PETUGAS
+        );
+
+        if (user.getRole() == Role.PETUGAS && schedule.getIs_cancelled()) {
+            throw new IllegalArgumentException(
+                    "Petugas tidak dapat membuat schedule yang dibatalkan"
+            );
+        }
+
+        if (!schedule.getIs_cancelled() && hasScheduleConflict(schedule, null)) {
+            throw new ScheduleConflictException(
+                    "Jadwal ruangan berbenturan dengan schedule aktif"
+            );
+        }
+
+        if (user.getRole() == Role.PETUGAS) {
+            schedule.setApproved_by(user.getId_user());
+            schedule.setApproved_at(LocalDateTime.now());
+        }
+
         return scheduleRepository.save(schedule);
     }
 
-    // UPDATE schedule
     public ScheduleEntity updateSchedule(
             Long id_schedule,
             ScheduleEntity scheduleData
     ) {
-
         if (id_schedule == null) {
             throw new IllegalArgumentException(
                     "ID schedule tidak boleh null"
@@ -130,53 +144,32 @@ public class ScheduleService {
                 ));
 
         validateSchedule(scheduleData);
+        validateSchedulePattern(scheduleData, false);
+
+        if (!scheduleData.getIs_cancelled()
+                && hasScheduleConflict(scheduleData, id_schedule)) {
+            throw new ScheduleConflictException(
+                    "Jadwal ruangan berbenturan dengan schedule aktif"
+            );
+        }
 
         schedule.setId_room(scheduleData.getId_room());
-
-        /*
-         * created_by TIDAK diubah ketika update.
-         *
-         * User yang pertama kali membuat schedule
-         * tetap menjadi created_by.
-         */
-        schedule.setActivity_name(
-                scheduleData.getActivity_name()
-        );
-
-        schedule.setLecturer_name(
-                scheduleData.getLecturer_name()
-        );
-
-        schedule.setSchedule_type(
-                scheduleData.getSchedule_type()
-        );
-
-        schedule.setSchedule_date(
-                scheduleData.getSchedule_date()
-        );
-
-        schedule.setDay_of_week(
-                scheduleData.getDay_of_week()
-        );
-
-        schedule.setStart_time(
-                scheduleData.getStart_time()
-        );
-
-        schedule.setEnd_time(
-                scheduleData.getEnd_time()
-        );
-
-        schedule.setIs_cancelled(
-                scheduleData.getIs_cancelled()
-        );
+        schedule.setActivity_name(scheduleData.getActivity_name());
+        schedule.setLecturer_name(scheduleData.getLecturer_name());
+        if (scheduleData.getRequester_name() != null) {
+            schedule.setRequester_name(scheduleData.getRequester_name());
+        }
+        schedule.setSchedule_type(scheduleData.getSchedule_type());
+        schedule.setSchedule_date(scheduleData.getSchedule_date());
+        schedule.setDay_of_week(scheduleData.getDay_of_week());
+        schedule.setStart_time(scheduleData.getStart_time());
+        schedule.setEnd_time(scheduleData.getEnd_time());
+        schedule.setIs_cancelled(scheduleData.getIs_cancelled());
 
         return scheduleRepository.save(schedule);
     }
 
-    // DELETE schedule
     public void deleteSchedule(Long id_schedule) {
-
         if (id_schedule == null) {
             throw new IllegalArgumentException(
                     "ID schedule tidak boleh null"
@@ -193,14 +186,11 @@ public class ScheduleService {
         scheduleRepository.deleteById(id_schedule);
     }
 
-    // UPDATE is cancelled
     public ScheduleEntity updateCancelled(
             Long id_schedule,
             Boolean isCancelled
     ) {
-
-        ScheduleEntity schedule =
-                getScheduleById(id_schedule);
+        ScheduleEntity schedule = getScheduleById(id_schedule);
 
         if (isCancelled == null) {
             throw new IllegalArgumentException(
@@ -209,24 +199,25 @@ public class ScheduleService {
         }
 
         schedule.setIs_cancelled(isCancelled);
-
         return scheduleRepository.save(schedule);
     }
 
-    // Validasi data schedule
-    private void validateSchedule(
-            ScheduleEntity schedule
-    ) {
-
+    private void validateSchedule(ScheduleEntity schedule) {
         if (schedule.getId_room() == null) {
             throw new IllegalArgumentException(
                     "ID room wajib diisi"
             );
         }
 
-        if (schedule.getActivity_name() == null ||
-                schedule.getActivity_name().trim().isEmpty()) {
+        if (!roomRepository.existsById(schedule.getId_room())) {
+            throw new IllegalArgumentException(
+                    "Ruangan dengan ID " + schedule.getId_room()
+                            + " tidak ditemukan"
+            );
+        }
 
+        if (schedule.getActivity_name() == null
+                || schedule.getActivity_name().trim().isEmpty()) {
             throw new IllegalArgumentException(
                     "Nama activity wajib diisi"
             );
@@ -250,10 +241,97 @@ public class ScheduleService {
             );
         }
 
+        if (!schedule.getStart_time().isBefore(schedule.getEnd_time())) {
+            throw new IllegalArgumentException(
+                    "Start time harus lebih awal daripada end time"
+            );
+        }
+
         if (schedule.getIs_cancelled() == null) {
             throw new IllegalArgumentException(
                     "Is cancelled wajib diisi"
             );
         }
+    }
+
+    private void validateOnceSchedule(ScheduleEntity schedule) {
+        if (schedule.getSchedule_date() == null) {
+            throw new IllegalArgumentException(
+                    "Tanggal schedule ONCE wajib diisi"
+            );
+        }
+        schedule.setDay_of_week(null);
+    }
+
+    private void validateSchedulePattern(
+            ScheduleEntity schedule,
+            boolean requesterRequired
+    ) {
+        if (schedule.getSchedule_type() == ScheduleType.ONCE) {
+            validateOnceSchedule(schedule);
+            if (requesterRequired) {
+                validateRequesterName(schedule);
+            }
+        } else if (schedule.getDay_of_week() == null) {
+            throw new IllegalArgumentException(
+                    "Hari schedule WEEKLY wajib diisi"
+            );
+        }
+    }
+
+    private void validateRequesterName(ScheduleEntity schedule) {
+        if (schedule.getRequester_name() == null
+                || schedule.getRequester_name().trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Nama pemohon wajib diisi"
+            );
+        }
+
+        if (schedule.getRequester_name().length() > 100) {
+            throw new IllegalArgumentException(
+                    "Nama pemohon tidak boleh lebih dari 100 karakter"
+            );
+        }
+    }
+
+    private boolean hasScheduleConflict(
+            ScheduleEntity candidate,
+            Long excludedScheduleId
+    ) {
+        DayOfWeek candidateDay = candidate.getSchedule_type() == ScheduleType.ONCE
+                ? DayOfWeek.valueOf(
+                        candidate.getSchedule_date().getDayOfWeek().name()
+                )
+                : candidate.getDay_of_week();
+
+        return scheduleRepository.findActiveOverlappingSchedules(
+                        candidate.getId_room(),
+                        candidate.getStart_time(),
+                        candidate.getEnd_time(),
+                        excludedScheduleId
+                ).stream()
+                .anyMatch(existing -> appliesOnCandidateDate(existing, candidate, candidateDay));
+    }
+
+    private boolean appliesOnCandidateDate(
+            ScheduleEntity existing,
+            ScheduleEntity candidate,
+            DayOfWeek candidateDay
+    ) {
+        if (existing.getSchedule_type() == ScheduleType.WEEKLY) {
+            return existing.getDay_of_week() == candidateDay;
+        }
+
+        if (existing.getSchedule_type() == ScheduleType.ONCE
+                && existing.getSchedule_date() != null) {
+            if (candidate.getSchedule_type() == ScheduleType.ONCE) {
+                return existing.getSchedule_date().equals(candidate.getSchedule_date());
+            }
+            return DayOfWeek.valueOf(
+                    existing.getSchedule_date().getDayOfWeek().name()
+            ) == candidateDay;
+        }
+
+        return false;
     }
 }

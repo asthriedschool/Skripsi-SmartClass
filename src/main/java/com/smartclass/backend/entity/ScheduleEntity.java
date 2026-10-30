@@ -33,6 +33,15 @@ public class ScheduleEntity {
     @Column(name = "lecturer_name", length = 100)
     private String lecturer_name;
 
+    @Column(name = "requester_name", length = 100)
+    private String requester_name;
+
+    @Column(name = "approved_by")
+    private Long approved_by;
+
+    @Column(name = "approved_at")
+    private LocalDateTime approved_at;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "schedule_type", nullable = false)
     private ScheduleType schedule_type;
