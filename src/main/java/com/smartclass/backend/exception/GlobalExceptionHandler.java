@@ -8,6 +8,8 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,6 +23,53 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(status)
                 .body(generateAPIResponse(status, message));
+    }
+
+    @ExceptionHandler(ScheduleConflictException.class)
+    public ResponseEntity<?> handlerScheduleConflict(
+            ScheduleConflictException e
+    ) {
+        final int status = HttpStatus.CONFLICT.value();
+        return ResponseEntity
+                .status(status)
+                .body(generateAPIResponse(status, e.getMessage()));
+    }
+
+    @ExceptionHandler(VisionInputException.class)
+    public ResponseEntity<?> handlerVisionInput(VisionInputException e) {
+        final int status = HttpStatus.BAD_REQUEST.value();
+        return ResponseEntity
+                .status(status)
+                .body(generateAPIResponse(status, e.getMessage()));
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<?> handlerMissingMultipartPart(
+            MissingServletRequestPartException e
+    ) {
+        final int status = HttpStatus.BAD_REQUEST.value();
+        return ResponseEntity
+                .status(status)
+                .body(generateAPIResponse(status, "Field image wajib diisi"));
+    }
+
+    @ExceptionHandler({
+            VisionPayloadTooLargeException.class,
+            MaxUploadSizeExceededException.class
+    })
+    public ResponseEntity<?> handlerVisionPayloadTooLarge(Exception e) {
+        final int status = HttpStatus.PAYLOAD_TOO_LARGE.value();
+        return ResponseEntity
+                .status(status)
+                .body(generateAPIResponse(status, e.getMessage()));
+    }
+
+    @ExceptionHandler(VisionInferenceException.class)
+    public ResponseEntity<?> handlerVisionInference(VisionInferenceException e) {
+        final int status = HttpStatus.INTERNAL_SERVER_ERROR.value();
+        return ResponseEntity
+                .status(status)
+                .body(generateAPIResponse(status, e.getMessage()));
     }
 
     @ExceptionHandler(DisabledException.class)

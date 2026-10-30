@@ -1,5 +1,6 @@
 package com.smartclass.backend.controllers;
 
+import com.smartclass.backend.dto.ScheduleRequest;
 import com.smartclass.backend.entity.ScheduleEntity;
 import com.smartclass.backend.service.ScheduleService;
 
@@ -35,7 +36,7 @@ public class ScheduleController {
     // CREATE schedule
     @PostMapping
     public ScheduleEntity createSchedule(
-            @RequestBody ScheduleEntity schedule,
+            @RequestBody ScheduleRequest schedule,
             Authentication authentication
     ) {
 

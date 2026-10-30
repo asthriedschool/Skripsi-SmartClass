@@ -1,0 +1,17 @@
+$kind: http-request
+url: http://localhost:8081/api/vision/detect
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: image
+      src:
+        - /C:/Users/Chelsea Sandra/Downloads/Student-Information-System-Help-Institutions.jpg
+      description: ""
+      disabled: false
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0wuw}}"
+order: 1000
